@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Link Cleaner</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & Cairo -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        app: {
+                            bg: '#08080a',
+                            card: '#141416',
+                            border: '#222225',
+                            hover: '#1c1c1f',
+                            subtext: '#8e8e93',
+                            blue: '#3b82f6',
+                            blueHover: '#2563eb',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Cairo', 'Inter', 'sans-serif'],
+                        mono: ['SFMono-Regular', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #08080a;
+            color: #ffffff;
+            font-family: 'Cairo', 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 9999px;
+        }
+
+        /* Pure Redium Style Pill Buttons */
+        .btn-go {
+            background-color: #3b82f6;
+            color: #ffffff;
+            font-weight: 600;
+            border-radius: 9999px;
+            padding: 0.4rem 1.25rem;
+            font-size: 0.875rem;
+            transition: background-color 0.15s ease, transform 0.1s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-go:active {
+            transform: scale(0.96);
+            background-color: #2563eb;
+        }
+
+        .btn-red {
+            color: #ef4444;
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 0.4rem 0.8rem;
+            transition: opacity 0.15s ease;
+        }
+        .btn-red:hover {
+            opacity: 0.8;
+        }
+
+        /* Flat Clean Card */
+        .app-card {
+            background-color: #141416;
+            border: 1px solid #222225;
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        /* Divider line inside card lists */
+        .card-divider {
+            border-bottom: 1px solid #1e1e22;
+        }
+
+        .card-divider:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between pb-20">
+
+    <!-- Top App Bar Header -->
+    <header class="w-full pt-6 pb-2 px-4 max-w-lg mx-auto text-center sticky top-0 bg-[#08080a]/90 backdrop-blur-md z-30">
+        <!-- Logo -->
+        <div class="flex items-center justify-center gap-1.5 mb-5">
+            <span class="text-xl font-bold tracking-tight text-white font-mono">cleaner<span class="text-app-blue">.</span></span>
+        </div>
+
+        <!-- Top Navigation Tabs -->
+        <div class="flex items-center justify-center border-b border-[#1e1e22] text-xs font-bold uppercase tracking-wider">
+            <button id="tabActionsBtn" onclick="switchMainTab('actions')" class="flex-1 pb-3 text-app-blue border-b-2 border-app-blue transition-all">
+                الإجراءات (ACTIONS)
+            </button>
+            <button id="tabBulkBtn" onclick="switchMainTab('bulk')" class="flex-1 pb-3 text-app-subtext border-b-2 border-transparent transition-all hover:text-slate-300">
+                دفعة روابط (BULK)
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="w-full max-w-lg mx-auto px-4 py-4 flex-1 flex flex-col gap-6">
+
+        <!-- VIEW 1: ACTIONS TAB -->
+        <div id="viewActions" class="space-y-6">
+            
+            <!-- SECTION 1: INPUT BLOCK -->
+            <div>
+                <div class="text-[11px] font-bold text-app-subtext uppercase tracking-wider mb-2.5 px-1">
+                    إدخال الرابط (URL INPUT)
+                </div>
+                
+                <div class="app-card p-3.5 space-y-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-[#1c1c20] flex items-center justify-center text-slate-300 shrink-0">
+                            <i class="fa-solid fa-link text-sm"></i>
+                        </div>
+                        <input type="text" id="urlInput" placeholder="ضع الرابط هنا..." 
+                               class="w-full bg-transparent text-white placeholder-app-subtext text-sm focus:outline-none font-mono"
+                               dir="ltr" oninput="handleAutoDetect()">
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-[#1d1d21]">
+                        <button onclick="clearInput()" class="btn-red text-xs">
+                            مسح الإدخال
+                        </button>
+                        <button onclick="pasteAndClean()" class="btn-go gap-1.5">
+                            <i class="fa-regular fa-paste text-xs"></i>
+                            لصق وتنظيف
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: QUICK ACTIONS LIST (Redium Card Style) -->
+            <div>
+                <div class="text-[11px] font-bold text-app-subtext uppercase tracking-wider mb-2.5 px-1">
+                    الأدوات المتاحة (TOOLS)
+                </div>
+
+                <div class="app-card">
+                    <!-- Item 1: Manual Clean -->
+                    <div class="card-divider p-4 flex items-center justify-between gap-3 hover:bg-app-hover transition-colors">
+                        <div class="flex items-center gap-3.5 min-w-0">
+                            <div class="w-10 h-10 rounded-xl bg-[#1c1c20] flex items-center justify-center text-slate-200 shrink-0">
+                                <i class="fa-solid fa-wand-magic-sparkles text-sm"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <h3 class="text-sm font-semibold text-white leading-tight">تنظيف الرابط الحالي</h3>
+                                <p class="text-xs text-app-subtext truncate mt-0.5">حذف رموز التتبع الإعلاني والتجسسية</p>
+                            </div>
+                        </div>
+                        <button onclick="processClean()" class="btn-go shrink-0">
+                            تنفيذ
+                        </button>
+                    </div>
+
+                    <!-- Item 2: Unshorten / Deep Clean -->
+                    <div class="card-divider p-4 flex items-center justify-between gap-3 hover:bg-app-hover transition-colors">
+                        <div class="flex items-center gap-3.5 min-w-0">
+                            <div class="w-10 h-10 rounded-xl bg-[#1c1c20] flex items-center justify-center text-slate-200 shrink-0">
+                                <i class="fa-solid fa-shield-halved text-sm"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <h3 class="text-sm font-semibold text-white leading-tight">فحص الخصوصية</h3>
+                                <p class="text-xs text-app-subtext truncate mt-0.5">تأكيد خلو الرابط من المعلمات الضارة</p>
+                            </div>
+                        </div>
+                        <button onclick="processClean()" class="btn-go shrink-0">
+                            فحص
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: RESULT DISPLAY CARD (Hidden by default) -->
+            <div id="resultCard" class="hidden space-y-2">
+                <div class="text-[11px] font-bold text-app-subtext uppercase tracking-wider px-1">
+                    النتيجة (RESULT)
+                </div>
+
+                <div class="app-card p-4 space-y-4">
+                    <!-- Cleaned Link Row -->
+                    <div class="space-y-1.5">
+                        <div class="text-xs text-emerald-400 font-semibold flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-check"></i> الرابط النظيف جاهز
+                        </div>
+                        <div id="cleanedUrl" class="p-3 bg-[#0d0d0f] rounded-lg border border-[#202024] font-mono text-xs text-slate-200 break-all select-all" dir="ltr">
+                            <!-- Output URL -->
+                        </div>
+                    </div>
+
+                    <!-- Removed Parameters Tags -->
+                    <div id="removedParamsContainer" class="space-y-1.5">
+                        <div class="text-[11px] text-app-subtext">المعلمات المزالة:</div>
+                        <div id="paramsBadges" class="flex flex-wrap gap-1.5">
+                            <!-- Param badges -->
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center justify-between pt-2 border-t border-[#1d1d21]">
+                        <span id="savingsText" class="text-xs text-app-subtext"></span>
+                        <button onclick="copyResult()" class="btn-go gap-1.5">
+                            <i class="fa-regular fa-copy text-xs"></i>
+                            نسخ الرابط النظيف
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- VIEW 2: BULK TAB (Hidden initially) -->
+        <div id="viewBulk" class="hidden space-y-4">
+            <div class="text-[11px] font-bold text-app-subtext uppercase tracking-wider px-1">
+                تنظيف متعدد (BULK PROCESSOR)
+            </div>
+
+            <div class="app-card p-4 space-y-3">
+                <textarea id="bulkTextarea" rows="6" placeholder="ضع عدة روابط هنا (رابط واحد لكل سطر)..." 
+                          class="w-full bg-[#0d0d0f] border border-[#202024] rounded-lg p-3 text-xs font-mono text-slate-200 placeholder-app-subtext focus:outline-none focus:border-app-blue transition-colors" dir="ltr"></textarea>
+
+                <div class="flex items-center justify-between pt-1">
+                    <button onclick="document.getElementById('bulkTextarea').value=''" class="btn-red text-xs">
+                        مسح الكل
+                    </button>
+                    <button onclick="processBulk()" class="btn-go gap-1.5">
+                        تنظيف الكل
+                    </button>
+                </div>
+            </div>
+
+            <div id="bulkResultCard" class="hidden app-card p-4 space-y-3">
+                <div class="flex items-center justify-between border-b border-[#1d1d21] pb-2">
+                    <span class="text-xs font-semibold text-white">الروابط المنظفة</span>
+                    <button onclick="copyBulkOutput()" class="btn-go text-xs py-1 px-3">نسخ النتيجة</button>
+                </div>
+                <textarea id="bulkOutput" rows="6" readonly class="w-full bg-[#0d0d0f] border border-[#202024] rounded-lg p-3 text-xs font-mono text-emerald-400 focus:outline-none" dir="ltr"></textarea>
+            </div>
+        </div>
+
+        <!-- VIEW 3: HISTORY TAB (Hidden initially) -->
+        <div id="viewHistory" class="hidden space-y-4">
+            <div class="flex items-center justify-between px-1">
+                <div class="text-[11px] font-bold text-app-subtext uppercase tracking-wider">
+                    سجل الروابط (HISTORY)
+                </div>
+                <button onclick="clearHistory()" class="btn-red text-xs p-0">حذف السجل</button>
+            </div>
+
+            <div id="historyList" class="app-card">
+                <!-- History Items Injected via JS -->
+                <div class="p-8 text-center text-xs text-app-subtext">لا يوجد سجل روابط سابق</div>
+            </div>
+        </div>
+
+        <!-- VIEW 4: SETTINGS TAB (Hidden initially) -->
+        <div id="viewSettings" class="hidden space-y-4">
+            <div class="text-[11px] font-bold text-app-subtext uppercase tracking-wider px-1">
+                الإعدادات (SETTINGS)
+            </div>
+
+            <div class="app-card">
+                <div class="card-divider p-4 flex items-center justify-between">
+                    <div>
+                        <div class="text-sm font-semibold text-white">التنظيف التلقائي عند اللصق</div>
+                        <div class="text-xs text-app-subtext mt-0.5">معالجة الرابط فوراً بمجرد لصقه</div>
+                    </div>
+                    <input type="checkbox" id="autoCleanToggle" checked class="w-4 h-4 accent-app-blue rounded">
+                </div>
+                <div class="card-divider p-4 flex items-center justify-between">
+                    <div>
+                        <div class="text-sm font-semibold text-white">النسخ التلقائي بعد التنظيف</div>
+                        <div class="text-xs text-app-subtext mt-0.5">نسخ الرابط النظيف مباشرة للحافظة</div>
+                    </div>
+                    <input type="checkbox" id="autoCopyToggle" class="w-4 h-4 accent-app-blue rounded">
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (Redium Style Icons) -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-[#08080a]/95 border-t border-[#1e1e22] backdrop-blur-md z-30">
+        <div class="max-w-lg mx-auto flex items-center justify-around h-16">
+            <!-- Home / Actions -->
+            <button id="navHome" onclick="switchNav('home')" class="flex flex-col items-center justify-center gap-1 text-app-blue w-16">
+                <i class="fa-solid fa-house text-base"></i>
+                <span class="text-[10px] font-medium">الرئيسية</span>
+            </button>
+
+            <!-- History -->
+            <button id="navHistory" onclick="switchNav('history')" class="flex flex-col items-center justify-center gap-1 text-app-subtext hover:text-slate-200 w-16">
+                <i class="fa-solid fa-clock-rotate-left text-base"></i>
+                <span class="text-[10px] font-medium">السجل</span>
+            </button>
+
+            <!-- Settings -->
+            <button id="navSettings" onclick="switchNav('settings')" class="flex flex-col items-center justify-center gap-1 text-app-subtext hover:text-slate-200 w-16">
+                <i class="fa-solid fa-gear text-base"></i>
+                <span class="text-[10px] font-medium">الإعدادات</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Minimal Toast Notification -->
+    <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 opacity-0 pointer-events-none transition-all duration-200 transform translate-y-2">
+        <div class="bg-[#18181b] text-white border border-[#27272a] text-xs px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 font-medium">
+            <i id="toastIcon" class="fa-solid fa-circle-check text-app-blue"></i>
+            <span id="toastText">تمت العملية بنجاح</span>
+        </div>
+    </div>
+
+    <!-- Logic JS -->
+    <script>
+        // List of tracking query parameters to be stripped
+        const TRACKING_PARAMS = [
+            's', 'a', 't', 'si', 'igsh', 'ref_src', 'ref_url', 'fbclid', 'gclid', 'msclkid', 'twclid',
+            'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id',
+            'pd_rd_w', 'pf_rd_p', 'pf_rd_r', 'pd_rd_r', 'pd_rd_wg', 'ref_', '_encoding', 'psc', 'tag'
+        ];
+
+        let historyItems = [];
+
+        // Core URL Cleaner Logic
+        function cleanUrl(raw) {
+            if (!raw || !raw.trim()) return null;
+            let str = raw.trim();
+
+            // Extract link if surrounded by text
+            const urlMatch = str.match(/(https?:\/\/[^\s]+)/gi);
+            if (urlMatch) str = urlMatch[0];
+
+            if (!/^https?:\/\//i.test(str)) {
+                str = 'https://' + str;
+            }
+
+            try {
+                const u = new URL(str);
+                const removed = [];
+                const searchParams = new URLSearchParams(u.search);
+                const toDelete = [];
+
+                for (const [key, val] of searchParams.entries()) {
+                    const lKey = key.toLowerCase();
+                    if (TRACKING_PARAMS.includes(lKey) || lKey.startsWith('utm_') || lKey.startsWith('pf_rd_')) {
+                        toDelete.push(key);
+                        removed.push(key);
+                    }
+                }
+
+                toDelete.forEach(k => searchParams.delete(k));
+                u.search = searchParams.toString();
+
+                // Amazon path cleanup
+                if (u.hostname.includes('amazon.')) {
+                    const dp = u.pathname.match(/(\/dp\/[A-Z0-9]+|\/gp\/product\/[A-Z0-9]+)/i);
+                    if (dp) u.pathname = dp[0];
+                }
+
+                const cleaned = u.toString();
+                return {
+                    original: str,
+                    cleaned: cleaned,
+                    removed: removed,
+                    saved: Math.max(0, str.length - cleaned.length)
+                };
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Action: Paste & Clean
+        async function pasteAndClean() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text) {
+                    document.getElementById('urlInput').value = text;
+                    processClean();
+                    showToast('تم اللصق والتنظيف بنجاح');
+                }
+            } catch (e) {
+                showToast('يرجى لصق الرابط يدوياً', 'fa-triangle-exclamation');
+            }
+        }
+
+        // Action: Process Single Link Clean
+        function processClean() {
+            const input = document.getElementById('urlInput').value;
+            if (!input) {
+                showToast('ضع رابطاً أولاً', 'fa-circle-exclamation');
+                return;
+            }
+
+            const res = cleanUrl(input);
+            if (!res) {
+                showToast('الرابط غير صالح', 'fa-circle-xmark');
+                return;
+            }
+
+            // Display Results
+            document.getElementById('cleanedUrl').innerText = res.cleaned;
+            document.getElementById('savingsText').innerText = `تم اختصار ${res.saved} حرف`;
+
+            const badges = document.getElementById('paramsBadges');
+            badges.innerHTML = '';
+            if (res.removed.length > 0) {
+                res.removed.forEach(p => {
+                    const span = document.createElement('span');
+                    span.className = 'text-[10px] font-mono bg-[#1c1c20] text-rose-400 border border-[#2a2a30] px-2 py-0.5 rounded';
+                    span.innerText = p;
+                    badges.appendChild(span);
+                });
+            } else {
+                badges.innerHTML = '<span class="text-[11px] text-app-subtext">الرابط كان نظيفاً بالفعل</span>';
+            }
+
+            document.getElementById('resultCard').classList.remove('hidden');
+
+            // Save to history
+            saveToHistory(res.cleaned);
+
+            // Auto copy check
+            if (document.getElementById('autoCopyToggle').checked) {
+                copyResult();
+            }
+        }
+
+        function handleAutoDetect() {
+            if (document.getElementById('autoCleanToggle').checked) {
+                const val = document.getElementById('urlInput').value;
+                if (val.length > 20 && (val.includes('?') || val.includes('&'))) {
+                    processClean();
+                }
+            }
+        }
+
+        function clearInput() {
+            document.getElementById('urlInput').value = '';
+            document.getElementById('resultCard').classList.add('hidden');
+        }
+
+        function copyResult() {
+            const txt = document.getElementById('cleanedUrl').innerText;
+            if (txt) {
+                copyText(txt);
+                showToast('تم نسخ الرابط النظيف');
+            }
+        }
+
+        // Bulk Cleaner Logic
+        function processBulk() {
+            const text = document.getElementById('bulkTextarea').value;
+            if (!text.trim()) {
+                showToast('أدخل الروابط أولاً', 'fa-circle-exclamation');
+                return;
+            }
+
+            const lines = text.split('\n');
+            const outputs = [];
+            lines.forEach(l => {
+                if (l.trim()) {
+                    const r = cleanUrl(l.trim());
+                    outputs.push(r ? r.cleaned : l.trim());
+                }
+            });
+
+            document.getElementById('bulkOutput').value = outputs.join('\n');
+            document.getElementById('bulkResultCard').classList.remove('hidden');
+            showToast(`تم تنظيف ${outputs.length} رابط`);
+        }
+
+        function copyBulkOutput() {
+            const txt = document.getElementById('bulkOutput').value;
+            if (txt) {
+                copyText(txt);
+                showToast('تم نسخ كافة الروابط');
+            }
+        }
+
+        // Helper Copy
+        function copyText(str) {
+            const area = document.createElement('textarea');
+            area.value = str;
+            document.body.appendChild(area);
+            area.select();
+            document.execCommand('copy');
+            document.body.removeChild(area);
+        }
+
+        // History Management
+        function saveToHistory(cleanedUrl) {
+            if (!historyItems.includes(cleanedUrl)) {
+                historyItems.unshift(cleanedUrl);
+                if (historyItems.length > 10) historyItems.pop();
+                renderHistory();
+            }
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('historyList');
+            if (historyItems.length === 0) {
+                container.innerHTML = '<div class="p-8 text-center text-xs text-app-subtext">لا يوجد سجل روابط سابق</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            historyItems.forEach(url => {
+                const div = document.createElement('div');
+                div.className = 'card-divider p-3.5 flex items-center justify-between gap-3';
+                div.innerHTML = `
+                    <div class="font-mono text-xs text-slate-300 truncate dir-ltr">${url}</div>
+                    <button onclick="copyText('${url}'); showToast('تم النسخ');" class="btn-go py-1 px-3 text-xs shrink-0">نسخ</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function clearHistory() {
+            historyItems = [];
+            renderHistory();
+            showToast('تم مسح السجل');
+        }
+
+        // Navigation Tabs Switcher
+        function switchMainTab(type) {
+            const actions = document.getElementById('viewActions');
+            const bulk = document.getElementById('viewBulk');
+            const btnA = document.getElementById('tabActionsBtn');
+            const btnB = document.getElementById('tabBulkBtn');
+
+            if (type === 'actions') {
+                actions.classList.remove('hidden');
+                bulk.classList.add('hidden');
+                btnA.className = "flex-1 pb-3 text-app-blue border-b-2 border-app-blue transition-all";
+                btnB.className = "flex-1 pb-3 text-app-subtext border-b-2 border-transparent transition-all hover:text-slate-300";
+            } else {
+                actions.classList.add('hidden');
+                bulk.classList.remove('hidden');
+                btnB.className = "flex-1 pb-3 text-app-blue border-b-2 border-app-blue transition-all";
+                btnA.className = "flex-1 pb-3 text-app-subtext border-b-2 border-transparent transition-all hover:text-slate-300";
+            }
+        }
+
+        function switchNav(target) {
+            const views = ['viewActions', 'viewBulk', 'viewHistory', 'viewSettings'];
+            const navs = ['navHome', 'navHistory', 'navSettings'];
+
+            views.forEach(v => document.getElementById(v).classList.add('hidden'));
+            navs.forEach(n => {
+                const el = document.getElementById(n);
+                el.classList.remove('text-app-blue');
+                el.classList.add('text-app-subtext');
+            });
+
+            if (target === 'home') {
+                document.getElementById('viewActions').classList.remove('hidden');
+                document.getElementById('navHome').classList.add('text-app-blue');
+                document.getElementById('navHome').classList.remove('text-app-subtext');
+            } else if (target === 'history') {
+                document.getElementById('viewHistory').classList.remove('hidden');
+                document.getElementById('navHistory').classList.add('text-app-blue');
+                document.getElementById('navHistory').classList.remove('text-app-subtext');
+            } else if (target === 'settings') {
+                document.getElementById('viewSettings').classList.remove('hidden');
+                document.getElementById('navSettings').classList.add('text-app-blue');
+                document.getElementById('navSettings').classList.remove('text-app-subtext');
+            }
+        }
+
+        // Minimal Toast Handler
+        function showToast(msg, icon = 'fa-circle-check') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastText').innerText = msg;
+            document.getElementById('toastIcon').className = `fa-solid ${icon} text-app-blue`;
+
+            toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-2');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
+                toast.classList.remove('opacity-100', 'translate-y-0');
+            }, 2200);
+        }
+    </script>
+</body>
+</html>
