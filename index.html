@@ -129,13 +129,13 @@
 
         <!-- VIEW 1: ACTIONS TAB -->
         <div id="viewActions" class="space-y-6">
-            
+
             <!-- SECTION 1: INPUT BLOCK -->
             <div>
                 <div class="text-[11px] font-bold text-app-subtext uppercase tracking-wider mb-2.5 px-1">
                     إدخال الرابط (URL INPUT)
                 </div>
-                
+
                 <div class="app-card p-3.5 space-y-3">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-[#1c1c20] flex items-center justify-center text-slate-300 shrink-0">
@@ -293,14 +293,14 @@
                         <div class="text-sm font-semibold text-white">التنظيف التلقائي عند اللصق</div>
                         <div class="text-xs text-app-subtext mt-0.5">معالجة الرابط فوراً بمجرد لصقه</div>
                     </div>
-                    <input type="checkbox" id="autoCleanToggle" checked class="w-4 h-4 accent-app-blue rounded">
+                    <input type="checkbox" id="autoCleanToggle" onchange="saveSettings()" checked class="w-4 h-4 accent-app-blue rounded">
                 </div>
                 <div class="card-divider p-4 flex items-center justify-between">
                     <div>
                         <div class="text-sm font-semibold text-white">النسخ التلقائي بعد التنظيف</div>
                         <div class="text-xs text-app-subtext mt-0.5">نسخ الرابط النظيف مباشرة للحافظة</div>
                     </div>
-                    <input type="checkbox" id="autoCopyToggle" class="w-4 h-4 accent-app-blue rounded">
+                    <input type="checkbox" id="autoCopyToggle" onchange="saveSettings()" class="w-4 h-4 accent-app-blue rounded">
                 </div>
             </div>
         </div>
@@ -348,6 +348,33 @@
         ];
 
         let historyItems = [];
+
+        // Load History & Settings from localStorage on init
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedHistory = localStorage.getItem('cleaner_history');
+            if (savedHistory) {
+                try {
+                    historyItems = JSON.parse(savedHistory);
+                    renderHistory();
+                } catch (e) { historyItems = []; }
+            }
+
+            const savedAutoClean = localStorage.getItem('cleaner_autoclean');
+            if (savedAutoClean !== null) {
+                document.getElementById('autoCleanToggle').checked = (savedAutoClean === 'true');
+            }
+
+            const savedAutoCopy = localStorage.getItem('cleaner_autocopy');
+            if (savedAutoCopy !== null) {
+                document.getElementById('autoCopyToggle').checked = (savedAutoCopy === 'true');
+            }
+        });
+
+        // Save Settings to localStorage
+        function saveSettings() {
+            localStorage.setItem('cleaner_autoclean', document.getElementById('autoCleanToggle').checked);
+            localStorage.setItem('cleaner_autocopy', document.getElementById('autoCopyToggle').checked);
+        }
 
         // Core URL Cleaner Logic
         function cleanUrl(raw) {
@@ -515,11 +542,12 @@
             document.body.removeChild(area);
         }
 
-        // History Management
+        // History Management with LocalStorage
         function saveToHistory(cleanedUrl) {
             if (!historyItems.includes(cleanedUrl)) {
                 historyItems.unshift(cleanedUrl);
-                if (historyItems.length > 10) historyItems.pop();
+                if (historyItems.length > 15) historyItems.pop();
+                localStorage.setItem('cleaner_history', JSON.stringify(historyItems));
                 renderHistory();
             }
         }
@@ -545,6 +573,7 @@
 
         function clearHistory() {
             historyItems = [];
+            localStorage.removeItem('cleaner_history');
             renderHistory();
             showToast('تم مسح السجل');
         }
